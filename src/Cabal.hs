@@ -11,7 +11,7 @@ import Control.Monad (when)
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.State (execStateT, modify)
 import Data.Char (isSpace)
-import Data.List (foldl', nub, sort, find, isPrefixOf, isSuffixOf)
+import Data.List (foldl', nub, find, sort, isPrefixOf, isSuffixOf)
 #if __GLASGOW_HASKELL__ < 709
 import Control.Applicative ((<$>))
 import Data.Monoid (Monoid(..))
@@ -34,10 +34,8 @@ import Distribution.Simple.Program.Db (lookupProgram)
 import Distribution.Simple.Program.Types (ConfiguredProgram(programVersion), simpleProgram)
 import Distribution.Simple.Program.GHC (GhcOptions(..), renderGhcOptions)
 import Distribution.Simple.Setup (ConfigFlags(..), defaultConfigFlags, configureCommand, toFlag)
-#if __GLASGOW_HASKELL__ >= 709
 import Distribution.Utils.NubList
 import qualified Distribution.Simple.GHC as GHC(configure)
-#endif
 import Distribution.Verbosity (silent)
 import Distribution.Version (Version(..))
 
@@ -158,7 +156,6 @@ getPackageGhcOpts path mbStack opts = do
         case getGhcVersion localBuildInfo of
             Nothing -> return $ Left "GHC is not configured"
 
-#if __GLASGOW_HASKELL__ >= 709
             Just _  -> do
                 let mbLibName = pkgLibName pkgDescr
                 let ghcOpts' = foldl' mappend mempty $ map (getComponentGhcOptions localBuildInfo) $ flip allComponentsBy (\c -> c) . localPkgDescr $ localBuildInfo
@@ -172,17 +169,6 @@ getPackageGhcOpts path mbStack opts = do
                 (ghcInfo,_,_) <- GHC.configure silent Nothing Nothing defaultProgramConfiguration
 
                 return $ Right $ renderGhcOptions ghcInfo ghcOpts
-#else
-            Just ghcVersion -> do
-                let mbLibName = pkgLibName pkgDescr
-                let ghcOpts' = foldl' mappend mempty $ map (getComponentGhcOptions localBuildInfo) $ flip allComponentsBy (\c -> c) . localPkgDescr $ localBuildInfo
-
-                    ghcOpts = ghcOpts' { ghcOptExtra = filter (/= "-Werror") $ nub $ ghcOptExtra ghcOpts'
-                                       , ghcOptPackages = filter (\(_, pkgId) -> Just (pkgName pkgId) /= mbLibName) $ nub (ghcOptPackages ghcOpts')
-                                       , ghcOptSourcePath = map (baseDir </>) (ghcOptSourcePath ghcOpts')
-                                       }
-                return $ Right $ renderGhcOptions ghcVersion ghcOpts
-#endif
 
     -- returns the right 'dist' directory in the case of a sandbox
     getDistDir = do

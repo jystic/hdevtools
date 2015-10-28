@@ -27,7 +27,7 @@ programVersion =
 cabalVersion :: String
 cabalVersion =
 #ifdef ENABLE_CABAL
-    "cabal-" ++ VERSION_Cabal
+    "cabal-" ++ VERSION_Cabal_hdevtools
 #else
     "no cabal support"
 #endif
